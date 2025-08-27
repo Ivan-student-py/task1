@@ -50,6 +50,6 @@ def count_shapes(matrix):
     return squares, circles
 
 if __name__ == "__main__":
-    matrix = read_matrix("task3/input.txt")
+    matrix = read_matrix("00/task3/input.txt")
     squares, circles = count_shapes(matrix)
     print(squares, circles)
