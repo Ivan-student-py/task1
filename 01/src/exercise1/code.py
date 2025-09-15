@@ -135,20 +135,24 @@ class Examiner(threading.Thread):
         return correct_set
     
 class QuestionBank():
-    def __init__(self, usage_count):
-        self.usage_count = usage_count
+    def __init__(self):
+        with open('questions.txt', 'r', encoding= 'utf-8') as f:
+            strings = f.readlines() #возврат списка строк
+        questions_without_spaces = []
+        for line in strings:
+            shorted_line = line.strip()
+            questions_without_spaces.append(shorted_line)
+        self.questions = questions_without_spaces
 
-    def get_random_questions(self, filename, num_questions):
-        with open(filename, 'r', encoding= 'utf-8') as f:
-            questions = f.readlines() #возврат списка строк
-            random_questions = random.sample(questions, num_questions)
-            return random_questions
-
-
-# filename = 'questions.txt'
-# number_of_random_questions = 3
-# selected_random_questions = get_random_questions(filename, number_of_random_questions)
-
+        self.usage_count = {} # словарь для нахождения счётчика по вопросу
+        for question in self.questions:
+            self.usage_count[question] = 0 # создание записей в словаре / счётчик для каждого вопроса
+            
+    def get_random_questions(self, n=3):
+        selected_questions = random.sample(self.questions, n)
+        for question in selected_questions:
+            self.record_usage(question) #метод для записи, что вопрос использован
+        return selected_questions
 
     def record_usage(self, question):
         
