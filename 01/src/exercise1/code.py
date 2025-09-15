@@ -75,9 +75,8 @@ class Examiner(threading.Thread):
                 time.sleep(random.uniform(break_time_min, break_time_max))
 
     def conduct_exam(self, student): #проведение экзамена
-        questions = get_questions_from_bank(count = 3)
+#        questions = get_questions_from_bank(count = 3)
 
-        #класс с банком вопросов будет прописан позже
 
         correct_answers = 0
         total_questions = len(questions)
@@ -135,4 +134,21 @@ class Examiner(threading.Thread):
 
         return correct_set
     
-class QuestionBank
+class QuestionBank():
+    def __init__(self, usage_count):
+        self.usage_count = usage_count
+
+    def get_random_questions(self, filename, num_questions):
+        with open(filename, 'r', encoding= 'utf-8') as f:
+            questions = f.readlines() #возврат списка строк
+            random_questions = random.sample(questions, num_questions)
+            return random_questions
+
+
+# filename = 'questions.txt'
+# number_of_random_questions = 3
+# selected_random_questions = get_random_questions(filename, number_of_random_questions)
+
+
+    def record_usage(self, question):
+        
