@@ -155,4 +155,19 @@ class QuestionBank():
         return selected_questions
 
     def record_usage(self, question):
-        
+        cleaned_question = question.strip()
+        if cleaned_question not in self.usage_count:
+            self.usage_count[cleaned_question] = 0
+        self.usage_count[cleaned_question] += 1
+
+    def get_most_used(self):
+        if not self.usage_count: #пустой ли словарь
+            return []
+        else:
+            max_count = max(self.usage_count.values()) #проход по всем значениям в поисках наибольшего числа
+            most_used_questions = []
+# переделаю
+            for i in self.usage_count.items(): 
+                if i == max_count:
+                    most_used_questions.append(i)
+        return most_used_questions
