@@ -166,8 +166,7 @@ class QuestionBank():
         else:
             max_count = max(self.usage_count.values()) #проход по всем значениям в поисках наибольшего числа
             most_used_questions = []
-# переделаю
-            for i in self.usage_count.items(): 
-                if i == max_count:
-                    most_used_questions.append(i)
+            for question, count in self.usage_count.items(): 
+                if count == max_count:
+                    most_used_questions.append(question)
         return most_used_questions
