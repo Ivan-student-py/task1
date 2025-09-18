@@ -15,6 +15,7 @@ mood_good = 1/4
 mood_neit = 5/8
 
 
+
 #Классы
 class Student():
     def __init__(self, name, gender):
@@ -40,7 +41,7 @@ class Student():
         return random.choices(words, weights=weights, k=1)[0]
     
 class Examiner(threading.Thread):
-    def __init__(self, name, gender, lock, student_queue, exam_start_time):
+    def __init__(self, name, gender, lock, student_queue, exam_start_time,question_bank, student_status):
         self.name = name
         self.gender = gender
         self.student_queue = student_queue
@@ -53,6 +54,8 @@ class Examiner(threading.Thread):
         self.has_taken_break = False
 
         self.exam_start_time = exam_start_time
+        self.question_bank = question_bank # доступ к банку вопросов
+        self.student_status = student_status # инициализация
 
         super().__init__()
         self.daemon = False
@@ -75,8 +78,8 @@ class Examiner(threading.Thread):
                 time.sleep(random.uniform(break_time_min, break_time_max))
 
     def conduct_exam(self, student): #проведение экзамена
-#        questions = get_questions_from_bank(count = 3)
 
+        questions = self.question_bank.get_random_questions(3) # изменено
 
         correct_answers = 0
         total_questions = len(questions)
@@ -101,7 +104,7 @@ class Examiner(threading.Thread):
             self.failed_count += 1
         self.work_time += duration
 
-        student_status[student.name] = 'Passed' if passed else 'Failed'
+        self.student_status[student.name] = 'Passed' if passed else 'Failed'
         time.sleep(duration)
 
     def get_golden_weights(self,words):
@@ -170,3 +173,11 @@ class QuestionBank():
                 if count == max_count:
                     most_used_questions.append(question)
         return most_used_questions
+    
+question_bank = QuestionBank()
+examiner = Examiner(name, gender, lock, student_queue, exam_start_time, question_bank) #пример будущего экзаменатора
+
+#Центральный класс
+class ExamController:
+    def __init__(self):
+        
