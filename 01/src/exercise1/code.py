@@ -180,4 +180,56 @@ examiner = Examiner(name, gender, lock, student_queue, exam_start_time, question
 #Центральный класс
 class ExamController:
     def __init__(self):
+        pass
+
+    def load_students(self, filename='students.txt'):
+        with open(filename, "r", encoding= 'utf-8') as f:
+            strings = f.readlines()
+        self.students = []
+        for line in strings:
+            parts = line.strip().split()
+            name = parts[0]
+            gender = parts[1]
+            self.students.append(Student(name,gender))
+        self.student_status = {student.name: "In Queue" for student in self.students}
+#для каждого student в self.students — берётся student.name, кот. становится ключом.
+
+    def load_examiners(self, filename='examiners.txt'):
+        with open(filename, 'r', encoding= 'utf-8') as f:
+            strings = f.readlines()
+        self.examiners = []
+        for line in strings:
+            parts = line.strip().split()
+            name = parts[0]
+            gender = parts[1]
+            self.examiners.append(Examiner(name, gender))
         
+    def start_exam(self):
+        self.exam_start_time = time.time()
+        self.lock = threading.Lock()
+        self.question_bank = QuestionBank()
+        self.students_queue = self.students.copy() # общая очередь
+        
+        new_examiner = Examiner(
+            lock = self.lock,
+            students_queue = self.students_queue,
+            exam_start_time = self.exam_start_time,
+            question_bank = self.question_bank,
+            student_status = self.student_status
+        )
+
+        self.new_examiners = []
+
+        for old_examiner in self.examiners: # объект, у которого уже есть имя и пол
+            
+            new_examiner = Examiner(
+                name = old_examiner.name,
+                gender = old_examiner.gender,
+                lock = self.lock,
+                student_queue = self.students_queue, # как в Examiner.__init__
+                exam_start_time = self.exam_start_time,
+                question_bank = self.question_bank,
+                student_status = self.student_status
+            )
+            self.new_examiners.append(new_examiner)
+        self.examiners = self.new_examiners
