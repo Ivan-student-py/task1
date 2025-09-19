@@ -233,3 +233,42 @@ class ExamController:
             )
             self.new_examiners.append(new_examiner)
         self.examiners = self.new_examiners
+
+        # запуск потоков
+        for examiner in self.examiners:
+            examiner.start()
+
+        # циклы не должны быть вложенными (застревание)
+        while any(examiner.is_alive() for examiner in self.examiners):
+            self.display_exam_status()
+            time.sleep(0.5)
+            
+        for examiner in self.examiners:
+            examiner.join()
+
+    def display_exam_status(self):
+        os.system('cls' if os.name == 'nt' else 'clear') #очистка экрана
+
+        student_data = [] #список кортежей
+        for student in self.students:
+            status = self.student_status[student.name]
+            student_data.append((student.name, status))
+
+        # порядок сортировки статусов (словарь приоритетов)
+        status_order = {"In Queue": 0, "Passed": 1, "Failed": 2}
+
+        student_data.sort (key = lambda x: status_order[x[1]])
+
+        col1_width = 12
+        col2_width = 10
+        print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+        print(f"|{'Student'.ljust(col1_width)}|{'Status'.ljust(col2_width)}|")
+        print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+        for name, status in student_data:
+            print(f"|{name.ljust(col1_width)}|{status.ljust(col2_width)}|")
+        print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+
+        print()
+        print(f"Remaining in queue: {len(self.students_queue)} out of {len(self.students)}")
+        print(f"Time since exam started: {int(time.time() - self.exam_start_time)} sec")
+
