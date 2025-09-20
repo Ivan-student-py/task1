@@ -191,7 +191,7 @@ class ExamController:
             name = parts[0]
             gender = parts[1]
             self.students.append(Student(name,gender))
-        self.student_status = {student.name: "In Queue" for student in self.students}
+        self.student_status = {student.name: "In Queue" for student in self.students} #начальное состояние
 #для каждого student в self.students — берётся student.name, кот. становится ключом.
 
     def load_examiners(self, filename='examiners.txt'):
@@ -267,8 +267,65 @@ class ExamController:
         for name, status in student_data:
             print(f"|{name.ljust(col1_width)}|{status.ljust(col2_width)}|")
         print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+        print()
+
+        col3_width = 13
+        col4_width = 17
+        col5_width = 9
+        col6_width = 14
+        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print(f"|{'Examiner'.ljust(col3_width)}|{'Current student'.ljust(col4_width)}|{'Total students'.ljust(col4_width)}|{'Failed'.ljust(col5_width)}|{'Work time'.ljust(col6_width)}|")
+        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+
+        for examiner in self.examiners:
+            name = examiner.name
+            current_student = examiner.current_student.name if examiner.current_student else "-"
+            total = examiner.total_students
+            failed = examiner.failed_count
+            work_time = f"{examiner.work_time:.2f}"
+            print(f"|{name.ljust(col3_width)}|{current_student.ljust(col4_width)}|{str(total).ljust(col4_width)}|{str(failed).ljust(col5_width)}|{work_time.ljust(col6_width)}|")
+        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print()
 
         print()
         print(f"Remaining in queue: {len(self.students_queue)} out of {len(self.students)}")
         print(f"Time since exam started: {int(time.time() - self.exam_start_time)} sec")
+        
+    def generate_final_report(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        student_data = []
+        for student in self.students:
+            status = self.student_status[student.name]
+            student_data.append((student.name, status))
 
+        status_order = {"Passed": 0, "Failed": 1}
+
+        student_data.sort (key = lambda x: status_order.get(x[1], 999))
+        #если ключа нет, вернёт 999; студенты с неизвестным статусом окажутся в конце (защита от ошибок)
+
+        col1_width = 12
+        col2_width = 10
+        print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+        print(f"|{'Student'.ljust(col1_width)}|{'Status'.ljust(col2_width)}|")
+        print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+        for name, status in student_data:
+            print(f"|{name.ljust(col1_width)}|{status.ljust(col2_width)}|")
+        print(f"+{'-' * col1_width}+{'-' * col2_width}+")
+        print()
+
+        col3_width = 13
+        col4_width = 17
+        col5_width = 9
+        col6_width = 14
+        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print(f"|{'Examiner'.ljust(col3_width)}|{'Total students'.ljust(col4_width)}|{'Failed'.ljust(col5_width)}|{'Work time'.ljust(col6_width)}|")
+        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+
+        for examiner in self.examiners:
+            name = examiner.name
+            total = examiner.total_students
+            failed = examiner.failed_count
+            work_time = f"{examiner.work_time:.2f}"
+            print(f"|{name.ljust(col3_width)}|{str(total).ljust(col4_width)}|{str(failed).ljust(col5_width)}|{work_time.ljust(col6_width)}|")
+        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print()
