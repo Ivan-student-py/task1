@@ -3,7 +3,7 @@ import random
 import os
 import threading
 
-#Глобальные переменные
+# Глобальные переменные
 golden_sech = 1.618
 
 when_can_be_break = 30
@@ -15,8 +15,7 @@ mood_good = 1/4
 mood_neit = 5/8
 
 
-
-#Классы
+# Классы
 class Student():
     def __init__(self, name, gender):
         self.name = name
@@ -32,20 +31,22 @@ class Student():
             if self.gender == "M":
                 weights[i] = prob
             else:
-                weights[n - 1 -i] = prob
+                weights[n - 1 - i] = prob
             remainder -= prob
         if self.gender == "M":
             weights[n - 1] = remainder
         else:
             weights[0] = remainder
         return random.choices(words, weights=weights, k=1)[0]
-    
+
+
 class Examiner(threading.Thread):
-    #изменено
+    # изменено
     def __init__(self, name, gender, lock=None, student_queue=None, exam_start_time=None, question_bank=None, student_status=None, student_exam_times=None, *args, **kwargs):
         # вызов Thread.__init__() без параметров
-        super().__init__(*args, **kwargs) # передаётся только то, что Thread может принять
-        
+        # передаётся только то, что Thread может принять
+        super().__init__(*args, **kwargs)
+
         self.name = name
         self.gender = gender
         self.lock = lock
@@ -60,13 +61,13 @@ class Examiner(threading.Thread):
         self.failed_count = 0
         self.work_time = 0.0
         self.has_taken_break = False
-        
+
         self.daemon = False
 
-        #для лучших студентов
+        # для лучших студентов
         self.student_exam_times = student_exam_times
 
-    def run(self): #тело потока экзаменатора
+    def run(self):  # тело потока экзаменатора
         while True:
             student = None
             with self.lock:
@@ -74,7 +75,7 @@ class Examiner(threading.Thread):
                     student = self.student_queue.pop(0)
             if student is None:
                 break
-            
+
             self.current_student = student
             self.conduct_exam(student)
             self.current_student = None
@@ -83,9 +84,9 @@ class Examiner(threading.Thread):
                 self.has_taken_break = True
                 time.sleep(random.uniform(break_time_min, break_time_max))
 
-    def conduct_exam(self, student): #проведение экзамена
+    def conduct_exam(self, student):  # проведение экзамена
 
-        questions = self.question_bank.get_random_questions(3) # изменено
+        questions = self.question_bank.get_random_questions(3)  # изменено
 
         correct_answers = 0
         total_questions = len(questions)
@@ -113,10 +114,10 @@ class Examiner(threading.Thread):
         self.student_status[student.name] = 'Passed' if passed else 'Failed'
         time.sleep(duration)
 
-        #код для лучших студентов
-        self.student_exam_times[student.name] = duration 
+        # код для лучших студентов
+        self.student_exam_times[student.name] = duration
 
-    def get_golden_weights(self,words):
+    def get_golden_weights(self, words):
         n = len(words)
         weights = [0] * n
         remainder = 1.0
@@ -125,7 +126,7 @@ class Examiner(threading.Thread):
             if self.gender == "M":
                 weights[i] = prob
             else:
-                weights[n - 1 -i] = prob
+                weights[n - 1 - i] = prob
             remainder -= prob
         if self.gender == "M":
             weights[n - 1] = remainder
@@ -135,7 +136,8 @@ class Examiner(threading.Thread):
 
     def generate_correct_answers(self, question):
         words = question.strip().split()
-        chosen_word = random.choices(words, weights=self.get_golden_weights(words))[0]
+        chosen_word = random.choices(
+            words, weights=self.get_golden_weights(words))[0]
         correct_set = {chosen_word}
 
         remaining_words = [w for w in words if w not in correct_set]
@@ -145,25 +147,28 @@ class Examiner(threading.Thread):
             remaining_words.remove(next_word)
 
         return correct_set
-    
+
+
 class QuestionBank():
     def __init__(self):
-        with open('01/src/exercise1/questions.txt', 'r', encoding= 'utf-8') as f:
-            strings = f.readlines() #возврат списка строк
+        with open('01/src/exercise1/questions.txt', 'r', encoding='utf-8') as f:
+            strings = f.readlines()  # возврат списка строк
         questions_without_spaces = []
         for line in strings:
             shorted_line = line.strip()
             questions_without_spaces.append(shorted_line)
         self.questions = questions_without_spaces
 
-        self.usage_count = {} # словарь для нахождения счётчика по вопросу
+        self.usage_count = {}  # словарь для нахождения счётчика по вопросу
         for question in self.questions:
-            self.usage_count[question] = 0 # создание записей в словаре / счётчик для каждого вопроса
-            
+            # создание записей в словаре / счётчик для каждого вопроса
+            self.usage_count[question] = 0
+
     def get_random_questions(self, n=3):
         selected_questions = random.sample(self.questions, n)
         for question in selected_questions:
-            self.record_usage(question) #метод для записи, что вопрос использован
+            # метод для записи, что вопрос использован
+            self.record_usage(question)
         return selected_questions
 
     def record_usage(self, question):
@@ -173,23 +178,26 @@ class QuestionBank():
         self.usage_count[cleaned_question] += 1
 
     def get_most_used(self):
-        if not self.usage_count: #пустой ли словарь
+        if not self.usage_count:  # пустой ли словарь
             return []
         else:
-            max_count = max(self.usage_count.values()) #проход по всем значениям в поисках наибольшего числа
+            # проход по всем значениям в поисках наибольшего числа
+            max_count = max(self.usage_count.values())
             most_used_questions = []
-            for question, count in self.usage_count.items(): 
+            for question, count in self.usage_count.items():
                 if count == max_count:
                     most_used_questions.append(question)
         return most_used_questions
-    
-#Центральный класс
+
+# Центральный класс
+
+
 class ExamController:
     def __init__(self):
-        self.student_exam_times = {} # имя студента = длительность экзамена
+        self.student_exam_times = {}  # имя студента = длительность экзамена
 
     def load_students(self, filename='01/src/exercise1/students.txt'):
-        with open(filename, "r", encoding= 'utf-8') as f:
+        with open(filename, "r", encoding='utf-8') as f:
             strings = f.readlines()
         self.students = []
 
@@ -201,18 +209,20 @@ class ExamController:
             parts = stripped_line.split()
             name = parts[0]
             gender = parts[1]
-            self.students.append(Student(name,gender))
-        self.student_status = {student.name: "In Queue" for student in self.students} #начальное состояние
-#для каждого student в self.students — берётся student.name, кот. становится ключом.
+            self.students.append(Student(name, gender))
+        # начальное состояние
+        self.student_status = {
+            student.name: "In Queue" for student in self.students}
+# для каждого student в self.students — берётся student.name, кот. становится ключом.
 
     def load_examiners(self, filename='01/src/exercise1/examiners.txt'):
-        with open(filename, 'r', encoding= 'utf-8') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             strings = f.readlines()
         self.examiners = []
 
         # исправление (заглушки)
         for line in strings:
-            if not line.strip(): #если строка пустая
+            if not line.strip():  # если строка пустая
                 continue
             parts = line.strip().split()
             if len(parts) != 2:
@@ -220,29 +230,29 @@ class ExamController:
             name = parts[0]
             gender = parts[1]
             self.examiners.append(Examiner(name, gender))
-        
+
     def start_exam(self):
         self.exam_start_time = time.time()
         self.lock = threading.Lock()
         self.question_bank = QuestionBank()
-        self.students_queue = self.students.copy() # общая очередь
+        self.students_queue = self.students.copy()  # общая очередь
 
         self.new_examiners = []
 
-        for old_examiner in self.examiners: # объект, у которого уже есть имя и пол
-            
+        for old_examiner in self.examiners:  # объект, у которого уже есть имя и пол
+
             new_examiner = Examiner(
-                name = old_examiner.name,
-                gender = old_examiner.gender,
-                lock = self.lock,
-                student_queue = self.students_queue, # как в Examiner.__init__
-                exam_start_time = self.exam_start_time,
-                question_bank = self.question_bank,
-                student_status = self.student_status,
+                name=old_examiner.name,
+                gender=old_examiner.gender,
+                lock=self.lock,
+                student_queue=self.students_queue,  # как в Examiner.__init__
+                exam_start_time=self.exam_start_time,
+                question_bank=self.question_bank,
+                student_status=self.student_status,
                 # для лучших студентов
                 student_exam_times=self.student_exam_times
 
-                )
+            )
             self.new_examiners.append(new_examiner)
         self.examiners = self.new_examiners
 
@@ -254,17 +264,18 @@ class ExamController:
         while any(examiner.is_alive() for examiner in self.examiners):
             self.display_exam_status()
             time.sleep(0.5)
-            
+
         for examiner in self.examiners:
             examiner.join()
-        
+
         self.generate_final_report()
 
-    #изменено для вывода
+    # изменено для вывода
     def display_exam_status(self):
-        print("\033[H\033[J", end="") # ANSI-код: очистить экран и вернуть курсор в начало
+        # ANSI-код: очистить экран и вернуть курсор в начало
+        print("\033[H\033[J", end="")
 
-        student_data = [] #список кортежей
+        student_data = []  # список кортежей
         for student in self.students:
             status = self.student_status[student.name]
             student_data.append((student.name, status))
@@ -272,7 +283,7 @@ class ExamController:
         # порядок сортировки статусов (словарь приоритетов)
         status_order = {"In Queue": 0, "Passed": 1, "Failed": 2}
 
-        student_data.sort (key = lambda x: status_order[x[1]])
+        student_data.sort(key=lambda x: status_order[x[1]])
 
         col1_width = 12
         col2_width = 10
@@ -302,9 +313,11 @@ class ExamController:
         print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
         print()
 
-        print(f"Remaining in queue: {len(self.students_queue)} out of {len(self.students)}")
-        print(f"Time since exam started: {int(time.time() - self.exam_start_time)} sec")
-        
+        print(
+            f"Remaining in queue: {len(self.students_queue)} out of {len(self.students)}")
+        print(
+            f"Time since exam started: {int(time.time() - self.exam_start_time)} sec")
+
     def generate_final_report(self):
         print("\033[H\033[J", end="")
         student_data = []
@@ -314,8 +327,8 @@ class ExamController:
 
         status_order = {"Passed": 0, "Failed": 1}
 
-        student_data.sort (key = lambda x: status_order.get(x[1], 999))
-        #если ключа нет, вернёт 999; студенты с неизвестным статусом окажутся в конце (защита от ошибок)
+        student_data.sort(key=lambda x: status_order.get(x[1], 999))
+        # если ключа нет, вернёт 999; студенты с неизвестным статусом окажутся в конце (защита от ошибок)
 
         col1_width = 12
         col2_width = 10
@@ -331,9 +344,11 @@ class ExamController:
         col4_width = 17
         col5_width = 9
         col6_width = 14
-        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print(
+            f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
         print(f"|{'Examiner'.ljust(col3_width)}|{'Total students'.ljust(col4_width)}|{'Failed'.ljust(col5_width)}|{'Work time'.ljust(col6_width)}|")
-        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print(
+            f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
 
         for examiner in self.examiners:
             name = examiner.name
@@ -341,17 +356,19 @@ class ExamController:
             failed = examiner.failed_count
             work_time = f"{examiner.work_time:.2f}"
             print(f"|{name.ljust(col3_width)}|{str(total).ljust(col4_width)}|{str(failed).ljust(col5_width)}|{work_time.ljust(col6_width)}|")
-        print(f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
+        print(
+            f"+{'-' * col3_width}+{'-' * col4_width}+{'-' * col5_width}+{'-' * col6_width}+")
         print()
 
         # общее время экзамена
-        total_time = time.time() - self.exam_start_time 
+        total_time = time.time() - self.exam_start_time
         print(f"Time from exam start to finish: {total_time:.2f}")
         print()
 
         if self.student_exam_times:
             min_time = min(self.student_exam_times.values())
-            best_students = [name for name, t in self.student_exam_times.items() if t == min_time and self.student_status[name] == "Passed"]
+            best_students = [name for name, t in self.student_exam_times.items(
+            ) if t == min_time and self.student_status[name] == "Passed"]
             print("Top performing students: " + ", ".join(best_students))
         else:
             print("Top performing students: None")
@@ -366,7 +383,8 @@ class ExamController:
             examiner_rates.append((examiner.name, fail_rate))
 
         min_rate = min(rate for _, rate in examiner_rates)
-        best_examiners = [name for name, rate in examiner_rates if rate == min_rate]
+        best_examiners = [name for name,
+                          rate in examiner_rates if rate == min_rate]
         print("Top examiners: " + ", ".join(best_examiners))
         print()
 
@@ -375,13 +393,16 @@ class ExamController:
         print()
 
         total_students = len(self.students)
-        passed_students = sum(1 for s in self.students if self.student_status[s.name] == "Passed") #для каждого сдавшего выдаёт 1
+        # для каждого сдавшего выдаёт 1
+        passed_students = sum(
+            1 for s in self.students if self.student_status[s.name] == "Passed")
         pass_rate = passed_students / total_students
 
         if pass_rate > 0.85:
             print("Result: Exam passed")
         else:
             print("Result: Exam failed")
+
 
 if __name__ == "__main__":
     controller = ExamController()
