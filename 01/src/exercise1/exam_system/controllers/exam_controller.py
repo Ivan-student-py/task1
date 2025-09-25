@@ -1,201 +1,11 @@
 import time
-import random
 import threading
-# Аннотация типов (tipe hints)
-from typing import List, Dict, Optional
-# deque
 from collections import deque
-
-
-class Config:
-    GOLDEN_SECH = 1.618
-    WHEN_CAN_BE_BREAK = 30
-    BREAK_TIME_MIN = 12
-    BREAK_TIME_MAX = 18
-    MOOD_BAD = 1 / 8
-    MOOD_GOOD = 1 / 4
-    MOOD_NEUTRAL = 5 / 8
-
-
-def calculate_golden_weights(words: List[str], gender: str) -> List[float]:
-    n = len(words)
-    weights = [0] * n
-    remainder = 1.0
-    for i in range(n - 1):
-        prob = remainder / Config.GOLDEN_SECH
-        if gender == "M":
-            weights[i] = prob
-        else:
-            weights[n - 1 - i] = prob
-        remainder -= prob
-    if gender == "M":
-        weights[n - 1] = remainder
-    else:
-        weights[0] = remainder
-    return weights
-
-
-# Классы
-class Student:
-    def __init__(self, name: str, gender: str) -> None:
-        self.name = name
-        self.gender = gender
-
-    def answer_question(self, question: str) -> str:
-        words = question.strip().split()
-        weights = calculate_golden_weights(words, self.gender)
-        return random.choices(words, weights=weights, k=1)[0]
-
-
-class Examiner(threading.Thread):
-    # изменено
-    def __init__(
-        self,
-        name: str,
-        gender: str,
-        # опиональные параметры
-        lock: Optional[threading.Lock] = None,
-        student_queue: Optional[List['Student']] = None,
-        exam_start_time: Optional[float] = None,
-        question_bank: Optional['QuestionBank'] = None,
-        student_status: Optional[Dict[str, str]] = None,
-        student_exam_durations: Optional[Dict[str, float]] = None
-    ) -> None:
-        # если инициализировать self до super().__init__(), некоторые
-        # реализации Python могут не распознать объект как поток
-        super().__init__()
-
-        self.name = name
-        self.gender = gender
-        self.lock = lock
-        self.student_queue = student_queue
-        self.exam_start_time = exam_start_time
-        self.question_bank = question_bank
-        self.student_status = student_status
-        self.student_exam_durations = student_exam_durations
-
-        self.current_student = None
-        self.total_students = 0
-        self.failed_count = 0
-        self.work_time = 0.0
-        self.has_taken_break = False
-
-        self.daemon = False
-
-    def run(self) -> None:  # тело потока экзаменатора
-        while True:
-            student = None
-            with self.lock:
-                if self.student_queue:
-                    # Замена pop(0) на popleft()
-                    student = self.student_queue.popleft()
-            if student is None:
-                break
-
-            self.current_student = student
-            self.conduct_exam(student)
-            self.current_student = None
-
-            if (
-                not self.has_taken_break and
-                time.time() - self.exam_start_time > Config.WHEN_CAN_BE_BREAK
-            ):
-                self.has_taken_break = True
-                time.sleep(random.uniform(
-                    Config.BREAK_TIME_MIN, Config.BREAK_TIME_MAX))
-
-    def conduct_exam(self, student: 'Student') -> None:  # проведение экзамена
-
-        questions = self.question_bank.get_random_questions(3)  # изменено
-
-        correct_answers = 0
-        total_questions = len(questions)
-        duration = random.uniform(len(self.name) - 1, len(self.name) + 1)
-
-        for question in questions:
-            correct_words = self.generate_correct_answers(question)
-            student_answer = student.answer_question(question)
-            if student_answer in correct_words:
-                correct_answers += 1
-
-        mood_roll = random.random()
-        if mood_roll < Config.MOOD_BAD:
-            passed = False
-        elif mood_roll < Config.MOOD_BAD + Config.MOOD_GOOD:
-            passed = True
-        else:
-            passed = correct_answers > (total_questions - correct_answers)
-
-        self.total_students += 1
-        if not passed:
-            self.failed_count += 1
-        self.work_time += duration
-
-        self.student_status[student.name] = "Passed" if passed else "Failed"
-        time.sleep(duration)
-
-        # код для лучших студентов
-        self.student_exam_durations[student.name] = duration
-
-    def generate_correct_answers(self, question: str) -> set:
-        words = question.strip().split()
-        chosen_word = random.choices(
-            words, weights=calculate_golden_weights(words, self.gender))[0]
-        correct_set = {chosen_word}
-
-        remaining_words = [w for w in words if w not in correct_set]
-        while remaining_words and random.random() < 1 / 3:
-            next_word = random.choice(remaining_words)
-            correct_set.add(next_word)
-            remaining_words.remove(next_word)
-
-        return correct_set
-
-
-class QuestionBank:
-    def __init__(self) -> None:
-        self.questions: List[str] = []
-        self.usage_count: Dict[str, int] = {}
-        with open("01/src/exercise1/questions.txt", "r", encoding="utf-8") as f:
-            lines = f.readlines()  # возврат списка строк
-        questions_without_spaces = []
-        for line in lines:
-            cleaned_line = line.strip()
-            questions_without_spaces.append(cleaned_line)
-        self.questions = questions_without_spaces
-
-        self.usage_count = {}  # словарь для нахождения счётчика по вопросу
-        for question in self.questions:
-            # создание записей в словаре / счётчик для каждого вопроса
-            self.usage_count[question] = 0
-
-    def get_random_questions(self, n: int = 3) -> List[str]:
-        selected_questions = random.sample(self.questions, n)
-        for question in selected_questions:
-            # метод для записи, что вопрос использован
-            self.record_usage(question)
-        return selected_questions
-
-    def record_usage(self, question: str) -> None:
-        cleaned_question = question.strip()
-        if cleaned_question not in self.usage_count:
-            self.usage_count[cleaned_question] = 0
-        self.usage_count[cleaned_question] += 1
-
-    def get_most_used(self) -> List[str]:
-        if not self.usage_count:  # пустой ли словарь
-            return []
-        else:
-            # проход по всем значениям в поисках наибольшего числа
-            max_count = max(self.usage_count.values())
-            most_used_questions = []
-            for question, count in self.usage_count.items():
-                if count == max_count:
-                    most_used_questions.append(question)
-        return most_used_questions
-
-
-# Центральный класс
+from typing import List, Dict, Optional
+from models.student import Student
+from models.examiner import Examiner
+from models.question_bank import QuestionBank
+from config import STUDENTS_FILE, EXAMERS_FILE
 
 
 class ExamController:
@@ -204,13 +14,12 @@ class ExamController:
         self.examiners: List[Examiner] = []
         self.students_queue: List[Student] = []
         self.student_status: Dict[str, float] = {}
-        # имя студента = длительность экзамена
         self.student_exam_durations: Dict[str, float] = {}
         self.exam_start_time: float = 0.0
         self.lock: Optional[threading.Lock] = None
         self.question_bank: Optional[QuestionBank] = None
 
-    def load_students(self, filename: str = "01/src/exercise1/students.txt") -> None:
+    def load_students(self, filename: str = STUDENTS_FILE) -> None:
         with open(filename, "r", encoding="utf-8") as f:
             lines = f.readlines()
         self.students = []
@@ -224,14 +33,13 @@ class ExamController:
             name = parts[0]
             gender = parts[1]
             self.students.append(Student(name, gender))
-        # начальное состояние
         self.student_status = {
             student.name: "In Queue" for student in self.students}
 
     # для каждого student в self.students — берётся student.name,
     # кот. становится ключом.
 
-    def load_examiners(self, filename: str = "01/src/exercise1/examiners.txt") -> None:
+    def load_examiners(self, filename: str = EXAMERS_FILE) -> None:
         with open(filename, "r", encoding="utf-8") as f:
             lines = f.readlines()
         self.examiners = []
@@ -255,29 +63,23 @@ class ExamController:
         self.students_queue = deque(self.students)
 
         self.new_examiners = []
-
-        # объект, у которого уже есть имя и пол
         for old_examiner in self.examiners:
-
             new_examiner = Examiner(
                 name=old_examiner.name,
                 gender=old_examiner.gender,
                 lock=self.lock,
-                student_queue=self.students_queue,  # как в Examiner.__init__
+                student_queue=self.students_queue,
                 exam_start_time=self.exam_start_time,
                 question_bank=self.question_bank,
                 student_status=self.student_status,
-                # для лучших студентов
                 student_exam_durations=self.student_exam_durations,
             )
             self.new_examiners.append(new_examiner)
         self.examiners = self.new_examiners
 
-        # запуск потоков
         for examiner in self.examiners:
             examiner.start()
 
-        # циклы не должны быть вложенными (застревание)
         while any(examiner.is_alive() for examiner in self.examiners):
             self.display_exam_status()
             time.sleep(0.5)
@@ -447,10 +249,3 @@ class ExamController:
             print("Result: Exam passed")
         else:
             print("Result: Exam failed")
-
-
-if __name__ == "__main__":
-    controller = ExamController()
-    controller.load_students()
-    controller.load_examiners()
-    controller.start_exam()
