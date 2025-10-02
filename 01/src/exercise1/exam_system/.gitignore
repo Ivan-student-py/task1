@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Виртуальные окружения
+venv/
+ENV/
+
+# Логи и временные файлы
+logs/
+tmp/
+*.log
+
+# Результаты сборки
+build/
+dist/
+
+# Файлы отладки VS Code
+.vscode/launch.json
+.vscode/settings.json
