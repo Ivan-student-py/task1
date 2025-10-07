@@ -5,25 +5,32 @@ import aiohttp  # для асинхронных http-запросов (нужн�
 # Функция запроса пути сохранения
 
 
-def get_valid_save_directory() -> str:
-    while True:
-        path = input("Input path for saving img: ").strip()
-        if not path:
-            print("Path can't be empty. Try again.")
-            continue
+class ImageDownloader:
+    def __init__(self):
+        self.save_directory: str = ""
+        self.results: list[tuple[str, str]] = []
+        self.session: aiohttp.ClientSession | None = None
 
-        if not os.path.isdir(path):
-            print(f"Error: path '{path}' is not an existing directory.")
-            continue
+    def get_valid_save_directory(self) -> str:
+        while True:
+            path = input("Input path for saving img: ").strip()
+            if not path:
+                print("Path can't be empty. Try again.")
+                continue
 
-        # проверка прав на запись
-        if not os.access(path, os.W_OK):
-            print(f"Error: no permission to write to the directory '{path}'.")
-            continue
+            if not os.path.isdir(path):
+                print(f"Error: path '{path}' is not an existing directory.")
+                continue
 
-        return path
+            # проверка прав на запись
+            if not os.access(path, os.W_OK):
+                print(
+                    f"Error: no permission to write to the directory '{path}'.")
+                continue
+
+            return path
 
 
 if __name__ == "__main__":
-    save_dir = get_valid_save_directory()
-    print(f"Chosen directory: {save_dir}")
+    downloader = ImageDownloader()
+    asyncio.run(downloader.run())
