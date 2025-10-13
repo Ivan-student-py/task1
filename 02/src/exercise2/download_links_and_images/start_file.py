@@ -115,6 +115,31 @@ class ImageDownloader:
         with open(filepath, 'wb') as f:
             f.write(content)
 
+    # async метод, для сохранения единообразия с другими методами
+    async def _print_summary(self) -> None:
+        print("\nSummary of succesful and unsuccessful downloads")
+
+        max_url_len = max(len(url)
+                          for url, _ in self.results) if self.results else 0
+        col_width_url = min(max(66, max_url_len), 80)
+        col_width_status = 10
+
+        border = "+" + "-" * (col_width_url + 2) + "+" + \
+            "-" * (col_width_status + 2) + "+"
+        header_url = "Link".ljust(col_width_url)
+        header_status = "Status".ljust(col_width_status)
+
+        print(border)
+        print(f"| {header_url} | {header_status} |")
+        print(border)
+
+        for url, status in self.results:
+            url_display = url.ljust(col_width_url)
+            status_display = status.ljust(col_width_status)
+            print(f"| {url_display} | {status_display} |")
+
+        print(border)
+
 
 if __name__ == "__main__":
     downloader = ImageDownloader()
