@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+.venv/
+.env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Downloaded images (НЕ ПУШИМ В ГИТ!)
+img/
+downloads/
+*.png
+*.jpg
+*.jpeg
+*.gif
